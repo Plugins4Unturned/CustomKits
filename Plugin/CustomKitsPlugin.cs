@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using System.Xml;
-using System.Text;
 using System.Collections.Generic;
 using Rocket.API.Collections;
 using Rocket.API;
@@ -26,13 +25,12 @@ namespace Teyhota.CustomKits.Plugin
     {
         public static string PluginName = "CustomKits";
         public static string PluginVersion = "1.7.0";
-        public static string BuildVersion = "11";
+        public static string BuildVersion = "21";
         public static string RocketVersion = "4.9.3.0";
         public static string UnturnedVersion = "3.23.5.0";
-
-        public static StringBuilder ThisDirectory =
-            new StringBuilder().Append(System.IO.Directory.GetCurrentDirectory()).Append(Path.DirectorySeparatorChar).Append("Plugins").Append(Path.DirectorySeparatorChar).Append("CustomKits").Append(Path.DirectorySeparatorChar);
-
+        
+        public static string ThisDirectory = System.IO.Directory.GetCurrentDirectory() + @"\Plugins\CustomKits\";
+        
         public static bool HasPerms;
         public const string PERMISSION = "ck.preset.";
         
@@ -52,7 +50,7 @@ namespace Teyhota.CustomKits.Plugin
         }
         public void CheckForUpdates(string xmlUrl)
         {
-            string updateDir = ThisDirectory + "Updates" + Path.DirectorySeparatorChar;
+            string updateDir = System.IO.Directory.GetCurrentDirectory() + @"\Updates\";
             string downloadURL = "";
             string newVersion = "";
             string updateInfo = "";
@@ -126,6 +124,48 @@ namespace Teyhota.CustomKits.Plugin
             catch
             {
                 Logger.LogError("The update has failed to download\n");
+            }
+        }
+        public void PlayerConnected(UnturnedPlayer player)
+        {
+            int maxValue = 50;
+
+            foreach (CustomKitsConfig.Preset Preset in Configuration.Instance.Presets)
+            {
+                if (player.IsAdmin)
+                {
+                    SlotManager.AddSlot(player, maxValue, int.MaxValue);
+                }
+                else
+                {
+                    if (!HasPerms)
+                    {
+                        SlotManager.AddSlot(player, 1, int.MaxValue);
+                    }
+                    else
+                    {
+                        if (player.HasPermission(PERMISSION + "*"))
+                        {
+                            SlotManager.AddSlot(player, maxValue, Preset.ItemLimit);
+                        }
+                        else if (player.HasPermission(PERMISSION + Preset.Name))
+                        {
+                            if (Preset.Name == "*")
+                            {
+                                SlotManager.AddSlot(player, maxValue, Preset.ItemLimit);
+                            }
+                            else
+                            {
+                                SlotManager.AddSlot(player, Preset.SlotCount, Preset.ItemLimit);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!KitManager.Kits.ContainsKey(player.CSteamID.m_SteamID))
+            {
+                KitManager.Kits.Add(player.CSteamID.m_SteamID, new Dictionary<string, InventoryManager.Inventory>());
             }
         }
 
@@ -213,7 +253,7 @@ namespace Teyhota.CustomKits.Plugin
             {
                 UnturnedPlayer player = UnturnedPlayer.FromSteamPlayer(sP);
 
-                OnPlayerConnect(player);
+                PlayerConnected(player);
             }
         }
 
@@ -251,11 +291,11 @@ namespace Teyhota.CustomKits.Plugin
 
         private void OnItemRemoved(UnturnedPlayer player, InventoryGroup inventoryGroup, byte inventoryIndex, ItemJar P)
         {
-            if (player.Player.movement.isSafe && LevelManager.levelType == ELevelType.ARENA)
+            if (LevelManager.levelType == ELevelType.ARENA && player.Player.movement.isSafe)
             {
-                var info = player.Player.movement.isSafeInfo;
+                var safeZoneInfo = player.Player.movement.isSafeInfo;
 
-                if (info.noWeapons && info.noBuildables)
+                if (safeZoneInfo.noWeapons && safeZoneInfo.noBuildables) // aka the Lobby
                 {
                     ItemManager.askClearRegionItems(player.Player.movement.region_x, player.Player.movement.region_y);
                 }
@@ -312,7 +352,7 @@ namespace Teyhota.CustomKits.Plugin
                     return;
                 }
 
-                KitManager.DelayedLoad(player, kitName, 0.7f);
+                StartCoroutine(KitManager.DelayedLoad(player, kitName, 0.3f));
             }
         }
 
@@ -344,52 +384,10 @@ namespace Teyhota.CustomKits.Plugin
                 Commands.Command_AutoCopy.Murdered.Add(player.CSteamID, murderer);
             }
         }
-
-        public void OnPlayerConnect(UnturnedPlayer player)
-        {
-            int maxValue = 50;
-
-            foreach (CustomKitsConfig.Preset Preset in Configuration.Instance.Presets)
-            {
-                if (player.IsAdmin)
-                {
-                    SlotManager.AddSlot(player, maxValue, int.MaxValue);
-                }
-                else
-                {
-                    if (!HasPerms)
-                    {
-                        SlotManager.AddSlot(player, 1, int.MaxValue);
-                    }
-                    else
-                    {
-                        if (player.HasPermission(PERMISSION + "*"))
-                        {
-                            SlotManager.AddSlot(player, maxValue, Preset.ItemLimit);
-                        }
-                        else if (player.HasPermission(PERMISSION + Preset.Name))
-                        {
-                            if (Preset.Name == "*")
-                            {
-                                SlotManager.AddSlot(player, maxValue, Preset.ItemLimit);
-                            }
-                            else
-                            {
-                                SlotManager.AddSlot(player, Preset.SlotCount, Preset.ItemLimit);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!KitManager.Kits.ContainsKey(player.CSteamID.m_SteamID))
-            {
-                KitManager.Kits.Add(player.CSteamID.m_SteamID, new Dictionary<string, InventoryManager.Inventory>());
-            }
-        }
+        
         private void OnPlayerConnected(UnturnedPlayer player)
         {
-            OnPlayerConnect(player);
+            PlayerConnected(player);
         }
 
         private void OnPlayerDisconnected(UnturnedPlayer player)

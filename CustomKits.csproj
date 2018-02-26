@@ -67,7 +67,7 @@
     <Compile Include="Commands\Command_AutoSkills.cs" />
     <Compile Include="Commands\Command_ClearInventory.cs" />
     <Compile Include="Commands\Command_GiveSlot.cs" />
-    <Compile Include="Commands\Command_Copy.cs" />
+    <Compile Include="Commands\Command_CopyInventory.cs" />
     <Compile Include="Commands\Command_Delete.cs" />
     <Compile Include="Commands\Command_List.cs" />
     <Compile Include="Commands\Command_Load.cs" />

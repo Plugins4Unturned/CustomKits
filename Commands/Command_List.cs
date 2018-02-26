@@ -14,7 +14,7 @@ namespace Teyhota.CustomKits.Commands
 
         public string Name => "list";
 
-        public string Help => "List your (or someone else's) saved kits";
+        public string Help => "List saved kits";
 
         public string Syntax => "[player]";
 

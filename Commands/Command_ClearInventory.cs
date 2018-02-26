@@ -13,7 +13,7 @@ namespace Teyhota.CustomKits.Commands
 
         public string Name => "clearinventory";
 
-        public string Help => "Clear your (or someone else's) inventory";
+        public string Help => "Clear somebody's inventory";
 
         public string Syntax => "[player]";
 

@@ -8,7 +8,7 @@ namespace Teyhota.CustomKits.Commands
 {
     public class Command_GiveSlot : IRocketCommand
     {
-        public AllowedCaller AllowedCaller => AllowedCaller.Player;
+        public AllowedCaller AllowedCaller => AllowedCaller.Both;
 
         public string Name => "giveslot";
 
@@ -23,12 +23,18 @@ namespace Teyhota.CustomKits.Commands
 
         public void Execute(IRocketPlayer caller, string[] command)
         {
-            UnturnedPlayer callr = (UnturnedPlayer)caller;
-
             if (command.Length < 3)
             {
-                UnturnedChat.Say(caller, Syntax, Color.red);
-                return;
+                if (caller is ConsolePlayer)
+                {
+                    Plugin.CustomKitsPlugin.Write(Syntax, System.ConsoleColor.Red);
+                    return;
+                }
+                else
+                {
+                    UnturnedChat.Say(caller, Syntax, Color.red);
+                    return;
+                }
             }
 
             var player = UnturnedPlayer.FromName(command[0]);
@@ -39,12 +45,27 @@ namespace Teyhota.CustomKits.Commands
             {
                 SlotManager.AddSlot(player, amount, limit);
 
-                UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("gave_slot", player.DisplayName, amount, limit));
+                if (caller is ConsolePlayer)
+                {
+                    Plugin.CustomKitsPlugin.Write(Plugin.CustomKitsPlugin.Instance.Translate("gave_slot", player.DisplayName, amount, limit), System.ConsoleColor.Green);
+                }
+                else
+                {
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("gave_slot", player.DisplayName, amount, limit));
+                }
+
                 UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("received_slot", caller.DisplayName, amount, limit));
             }
             else
             {
-                UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("player_offline"), Color.red);
+                if (caller is ConsolePlayer)
+                {
+                    Plugin.CustomKitsPlugin.Write(Plugin.CustomKitsPlugin.Instance.Translate("player_offline"), System.ConsoleColor.Red);
+                }
+                else
+                {
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("player_offline"), Color.red);
+                }
             }
         }
     }

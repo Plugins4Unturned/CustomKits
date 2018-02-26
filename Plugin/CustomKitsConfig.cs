@@ -9,7 +9,6 @@ namespace Teyhota.CustomKits.Plugin
         public static CustomKitsConfig Instance;
         
         public string DisableAutoUpdate;
-        
         public string DefaultKitName;
         public bool KeepKitsOnRestart;
         public bool KeepKitsOnDeath;

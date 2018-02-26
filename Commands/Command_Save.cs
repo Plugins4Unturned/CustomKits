@@ -13,7 +13,7 @@ namespace Teyhota.CustomKits.Commands
 
         public string Name => "save";
 
-        public string Help => "Save your current inventory as a \"kit\"";
+        public string Help => "Save your current inventory as a kit";
 
         public string Syntax => "[kit name]";
 
@@ -26,11 +26,10 @@ namespace Teyhota.CustomKits.Commands
         {
             UnturnedPlayer callr = (UnturnedPlayer)caller;
 
-            string kitName = null;
             string[] blackList = new string[] { };
             string presetName = null;
-            int itemLimit = 0;
-            int slotCount = SlotManager.SlotCount(callr);
+            string kitName = null;
+            int itemLimit = int.MaxValue;
 
             if (!caller.IsAdmin)
             {
@@ -52,6 +51,17 @@ namespace Teyhota.CustomKits.Commands
                         return;
                     }
                 }
+
+                if (KitManager.KitCount(callr, KitManager.Kits) >= SlotManager.SlotCount(callr))
+                {
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
+                    return;
+                }
+
+                var v = KitManager.KitCount(callr, KitManager.Kits);
+                var slot = SlotManager.Slots[callr.CSteamID.m_SteamID][v];
+
+                itemLimit = slot.itemLimit;
             }
 
             if (Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName == "preset_name")
@@ -76,18 +86,6 @@ namespace Teyhota.CustomKits.Commands
                     kitName = command[0];
                 }
             }
-            
-            foreach (SlotManager.Slot slot in SlotManager.Slots[callr.CSteamID.m_SteamID])
-            {
-                if (caller.IsAdmin)
-                {
-                    itemLimit = int.MaxValue;
-                }
-                else
-                {
-                    itemLimit = slot.itemLimit;
-                }
-            }
 
             List<InventoryManager.Item> itemList = new List<InventoryManager.Item>();
             int inventoryCount = 0;
@@ -109,16 +107,7 @@ namespace Teyhota.CustomKits.Commands
                 UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("unsupported_character", "*"), Color.red);
                 return;
             }
-
-            if (KitManager.KitCount(callr, KitManager.Kits) >= slotCount)
-            {
-                if (!caller.IsAdmin)
-                {
-                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
-                    return;
-                }
-            }
-
+                        
             if (blackList.Length > 0)
             {
                 foreach (InventoryManager.Item item in itemList)
@@ -138,7 +127,7 @@ namespace Teyhota.CustomKits.Commands
                     }
                 }
             }
-
+            
             if (inventoryCount > itemLimit)
             {
                 if (!caller.IsAdmin)

@@ -322,28 +322,10 @@ namespace Teyhota.CustomKits
             if (Commands.Command_AutoCopy.Murdered.ContainsKey(player.CSteamID))
             {
                 UnturnedPlayer murderer = UnturnedPlayer.FromCSteamID(Commands.Command_AutoCopy.Murdered[player.CSteamID]);
-
-                int itemLimit = 0;
-                foreach (SlotManager.Slot slot in SlotManager.Slots[player.CSteamID.m_SteamID])
-                {
-                    itemLimit = slot.itemLimit;
-                }
-
-                if (murderer.HasPermission("ck.copy.bypass"))
+                
+                if (murderer.HasPermission("ck.copyinventory.bypass"))
                 {
                     UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("copy_bypass", murderer.CharacterName), Color.red);
-                    return;
-                }
-
-                if (InventoryManager.ItemCount(murderer) > itemLimit && !player.IsAdmin)
-                {
-                    if (itemLimit == 0)
-                    {
-                        UnturnedChat.Say(player, "You do not have permissions to execute this command.", Color.red);
-                        return;
-                    }
-
-                    UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
                     return;
                 }
 
@@ -358,56 +340,67 @@ namespace Teyhota.CustomKits
             string kitName = Commands.Command_AutoSave.AutoSave[player.CSteamID];
             Inventory inventory = KitManager.AutoSaveKits[player.CSteamID.m_SteamID][kitName];
             int inventoryCount = inventory.items.Count;
+            int itemLimit = int.MaxValue;
 
-            int itemLimit = 0;
-            foreach (SlotManager.Slot slot in SlotManager.Slots[player.CSteamID.m_SteamID])
+            if (!player.IsAdmin)
             {
-                itemLimit = slot.itemLimit;
-            }
-
-            string[] blackList = new string[] { };
-            foreach (Plugin.CustomKitsConfig.Preset Preset in Plugin.CustomKitsPlugin.Instance.Configuration.Instance.Presets)
-            {
-                if (player.HasPermission(Plugin.CustomKitsPlugin.PERMISSION + Preset.Name))
+                if (KitManager.KitCount(player, KitManager.Kits) >= SlotManager.SlotCount(player))
                 {
-                    if (Preset.Blacklist != "")
+                    UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
+                    return;
+                }
+
+                var v = KitManager.KitCount(player, KitManager.Kits);
+                var slot = SlotManager.Slots[player.CSteamID.m_SteamID][v];
+
+                itemLimit = slot.itemLimit;
+
+                string[] blackList = new string[] { };
+                foreach (Plugin.CustomKitsConfig.Preset Preset in Plugin.CustomKitsPlugin.Instance.Configuration.Instance.Presets)
+                {
+                    if (player.HasPermission(Plugin.CustomKitsPlugin.PERMISSION + Preset.Name))
                     {
-                        blackList = Preset.Blacklist.Split(',');
-                        break;
+                        if (Preset.Blacklist != "")
+                        {
+                            blackList = Preset.Blacklist.Split(',');
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (blackList.Length > 0)
-            {
-                foreach (Item item in inventory.items)
+                if (blackList.Length > 0)
                 {
-                    List<int> bList = new List<int>();
-                    foreach (var itemID in blackList)
+                    foreach (Item item in inventory.items)
                     {
-                        bList.Add(int.Parse(itemID));
-                    }
+                        List<int> bList = new List<int>();
+                        foreach (var itemID in blackList)
+                        {
+                            bList.Add(int.Parse(itemID));
+                        }
 
-                    if (bList.Contains(item.id))
-                    {
-                        if (!player.IsAdmin)
+                        if (bList.Contains(item.id))
                         {
                             UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("blacklisted", UnturnedItems.GetItemAssetById(item.id)), Color.red);
                         }
                     }
                 }
             }
-
-            if (inventoryCount > itemLimit && !player.IsAdmin)
+            
+            if (inventoryCount > itemLimit)
             {
-                if (itemLimit == 0)
+                if (!player.IsAdmin)
                 {
-                    UnturnedChat.Say(player, "You do not have permissions to execute this command.", Color.red);
-                    return;
+                    if (itemLimit == 0)
+                    {
+                        UnturnedChat.Say(player, "You do not have permissions to execute this command.", Color.red);
+                        return;
+                    }
+                    else
+                    {
+                        UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
+                        return;
+                    }
                 }
-
-                UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
-                return;
             }
 
             if (inventoryCount < 1 || inventory.items == null)
@@ -421,20 +414,12 @@ namespace Teyhota.CustomKits
                 KitManager.DeleteKit(player, kitName, KitManager.Kits);
             }
 
-            if (KitManager.KitCount(player, KitManager.Kits) >= SlotManager.Slots[player.CSteamID.m_SteamID].Count && !player.IsAdmin)
-            {
-                UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
-            }
-            else
-            {
-                KitManager.Kits[player.CSteamID.m_SteamID].Add(kitName, inventory);
+            KitManager.Kits[player.CSteamID.m_SteamID].Add(kitName, inventory);
+            UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("kit_saved", kitName), Color.green);
 
-                UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("kit_saved", kitName), Color.green);
-
-                // Auto off
-                Commands.Command_AutoSave.AutoSave.Remove(player.CSteamID);
-                UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("autosave_off"), Color.green);
-            }
+            // Auto off
+            Commands.Command_AutoSave.AutoSave.Remove(player.CSteamID);
+            UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("autosave_off"), Color.green);
         }
     }
 
@@ -485,9 +470,12 @@ namespace Teyhota.CustomKits
                 {
                     ItemJar iJar = fromPlayer.Inventory.getItem(page, index);
 
-                    if (bList.Contains(iJar.item.id))
+                    if (!toPlayer.IsAdmin)
                     {
-                        continue;
+                        if (bList.Contains(iJar.item.id))
+                        {
+                            continue;
+                        }
                     }
 
                     itemList.Add(new InventoryManager.Item(iJar.item.id, iJar.item.metadata, page, iJar.x, iJar.y, iJar.rot));
@@ -516,7 +504,7 @@ namespace Teyhota.CustomKits
 
                 database.Add(toPlayer.CSteamID.m_SteamID, kit);
             }
-
+            
             Events.InvokeSaveKit(fromPlayer, toPlayer, kitName);
         }
 
@@ -544,11 +532,12 @@ namespace Teyhota.CustomKits
             if (kitName == "*")
             {
                 database[player.CSteamID.m_SteamID].Clear();
-                Events.InvokeDelKit(player, kitName);
-                return;
+            }
+            else
+            {
+                database[player.CSteamID.m_SteamID].Remove(kitName);
             }
 
-            database[player.CSteamID.m_SteamID].Remove(kitName);
             Events.InvokeDelKit(player, kitName);
         }
 
@@ -585,7 +574,17 @@ namespace Teyhota.CustomKits
         {
             if (Plugin.CustomKitsPlugin.Instance.Configuration.Instance.KeepKitsOnRestart == true)
             {
-                string json = JsonConvert.SerializeObject(Kits);
+                string json = "";
+
+                try
+                {
+                    json = JsonConvert.SerializeObject(Kits);
+                }
+                catch
+                {
+                    Logger.LogError("An error has occured while serializing kits");
+                    return;
+                }
 
                 if (File.Exists(Plugin.CustomKitsPlugin.ThisDirectory + "StoredKits.json"))
                 {
@@ -593,8 +592,6 @@ namespace Teyhota.CustomKits
                 }
                 else
                 {
-                    Plugin.CustomKitsPlugin.Write("StoredKits.json file was not found/nCreating a new one...", ConsoleColor.Yellow);
-
                     File.Create(Plugin.CustomKitsPlugin.ThisDirectory + "StoredKits.json").Close();
                     File.WriteAllText(Plugin.CustomKitsPlugin.ThisDirectory + "StoredKits.json", json);
                 }
