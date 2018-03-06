@@ -60,11 +60,11 @@ namespace Teyhota.CustomKits.Commands
             {
                 if (caller is ConsolePlayer)
                 {
-                    Plugin.CustomKitsPlugin.Write(Plugin.CustomKitsPlugin.Instance.Translate("player_offline"), System.ConsoleColor.Red);
+                    Plugin.CustomKitsPlugin.Write(Plugin.CustomKitsPlugin.Instance.Translate("player_doesn't_exist", player.CharacterName), System.ConsoleColor.Red);
                 }
                 else
                 {
-                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("player_offline"), Color.red);
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("player_doesn't_exist", player.CharacterName), Color.red);
                 }
             }
         }

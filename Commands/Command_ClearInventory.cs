@@ -22,7 +22,6 @@ namespace Teyhota.CustomKits.Commands
         public List<string> Permissions => new List<string> { "ck.clearinventory" };
 
         public const string OTHER_PERM = "ck.clearinventory.other";
-        public const string BYPASS_PERM = "ck.clearinventory.bypass";
 
 
         public void Execute(IRocketPlayer caller, string[] command)
@@ -37,7 +36,7 @@ namespace Teyhota.CustomKits.Commands
 
                 UnturnedPlayer callr = (UnturnedPlayer)caller;
 
-                InventoryManager.Clear(callr);
+                InventoryManager.Clear(callr, true);
 
                 UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("inventory_cleared"));
             }
@@ -46,7 +45,7 @@ namespace Teyhota.CustomKits.Commands
             {
                 UnturnedPlayer toPlayer = UnturnedPlayer.FromName(command[0]);
                 
-                if (toPlayer.HasPermission(BYPASS_PERM))
+                if (toPlayer.IsAdmin || toPlayer.HasPermission("ck.admin"))
                 {
                     UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("ci_bypass", toPlayer.CharacterName), Color.red);
                     return;
@@ -60,7 +59,7 @@ namespace Teyhota.CustomKits.Commands
                         return;
                     }
 
-                    InventoryManager.Clear(toPlayer);
+                    InventoryManager.Clear(toPlayer, true);
 
                     Plugin.CustomKitsPlugin.Write(Plugin.CustomKitsPlugin.Instance.Translate("inventory_cleared_other", toPlayer.CharacterName), ConsoleColor.Cyan);
                     return;
@@ -74,7 +73,7 @@ namespace Teyhota.CustomKits.Commands
                         return;
                     }
 
-                    InventoryManager.Clear(toPlayer);
+                    InventoryManager.Clear(toPlayer, true);
 
                     UnturnedChat.Say(toPlayer, Plugin.CustomKitsPlugin.Instance.Translate("inventory_cleared"));
                     UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("inventory_cleared_other", toPlayer.CharacterName));

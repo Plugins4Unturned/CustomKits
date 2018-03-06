@@ -24,38 +24,23 @@ namespace Teyhota.CustomKits.Commands
         public void Execute(IRocketPlayer caller, string[] command)
         {
             UnturnedPlayer callr = (UnturnedPlayer)caller;
-            string kitName = null;
-
-            #region Kit Name
+            string kitName = Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName;
+            
             if (Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName == "preset_name")
             {
                 foreach (Plugin.CustomKitsConfig.Preset Preset in Plugin.CustomKitsPlugin.Instance.Configuration.Instance.Presets)
                 {
                     if (caller.HasPermission(Plugin.CustomKitsPlugin.PERMISSION + Preset.Name))
                     {
-                        if (command.Length == 0)
-                        {
-                            kitName = Preset.Name;
-                        }
-                        else
-                        {
-                            kitName = command[0];
-                        }
+                        kitName = Preset.Name;
                     }
                 }
             }
-            else
+
+            if (command.Length == 1)
             {
-                if (command.Length == 0)
-                {
-                    kitName = Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName;
-                }
-                else
-                {
-                    kitName = command[0];
-                }
+                kitName = command[0];
             }
-            #endregion
 
             if (!KitManager.HasSavedKits(callr, KitManager.Kits))
             {
@@ -69,8 +54,8 @@ namespace Teyhota.CustomKits.Commands
                 return;
             }
 
-            InventoryManager.Clear(callr);
-            KitManager.LoadKit(callr, callr, kitName, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothing, KitManager.Kits);
+            InventoryManager.Clear(callr, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothingInKits);
+            KitManager.LoadKit(callr, callr, kitName, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothingInKits, KitManager.Kits);
             
             UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("kit_loaded", kitName), Color.green);
         }

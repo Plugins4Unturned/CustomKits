@@ -26,13 +26,17 @@ namespace Teyhota.CustomKits.Commands
         {
             UnturnedPlayer callr = (UnturnedPlayer)caller;
 
-            string[] blackList = new string[] { };
-            string presetName = null;
-            string kitName = null;
-            int itemLimit = int.MaxValue;
+            string kitName = Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName;
+            string presetName = "ADMIN_KIT";
 
-            if (!caller.IsAdmin)
+            List<InventoryManager.Item> itemList = InventoryManager.ListItems(callr);
+            int inventoryCount = itemList.Count;
+            
+            if (!caller.IsAdmin || !caller.HasPermission("ck.admin"))
             {
+                string[] blackList = new string[] { };
+                int itemLimit = int.MaxValue;
+
                 foreach (Plugin.CustomKitsConfig.Preset Preset in Plugin.CustomKitsPlugin.Instance.Configuration.Instance.Presets)
                 {
                     if (caller.HasPermission(Plugin.CustomKitsPlugin.PERMISSION + Preset.Name))
@@ -62,89 +66,47 @@ namespace Teyhota.CustomKits.Commands
                 var slot = SlotManager.Slots[callr.CSteamID.m_SteamID][v];
 
                 itemLimit = slot.itemLimit;
-            }
 
-            if (Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName == "preset_name")
-            {
-                if (command.Length == 0)
+                if (blackList.Length > 0)
                 {
-                    kitName = presetName;
-                }
-                else
-                {
-                    kitName = command[0];
-                }
-            }
-            else
-            {
-                if (command.Length == 0)
-                {
-                    kitName = Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName;
-                }
-                else
-                {
-                    kitName = command[0];
-                }
-            }
-
-            List<InventoryManager.Item> itemList = new List<InventoryManager.Item>();
-            int inventoryCount = 0;
-
-            for (byte page = 0; page < SDG.Unturned.PlayerInventory.PAGES - 1; page++)
-            {
-                for (byte index = 0; index < callr.Inventory.getItemCount(page); index++)
-                {
-                    SDG.Unturned.ItemJar iJar = callr.Inventory.getItem(page, index);
-
-                    itemList.Add(new InventoryManager.Item(iJar.item.id, iJar.item.metadata, page, iJar.x, iJar.y, iJar.rot));
-
-                    inventoryCount = itemList.Count;
-                }
-            }
-
-            if (kitName == "*")
-            {
-                UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("unsupported_character", "*"), Color.red);
-                return;
-            }
-                        
-            if (blackList.Length > 0)
-            {
-                foreach (InventoryManager.Item item in itemList)
-                {
-                    List<int> bList = new List<int>();
-                    foreach (var itemID in blackList)
+                    foreach (InventoryManager.Item item in itemList)
                     {
-                        bList.Add(int.Parse(itemID));
-                    }
+                        List<int> bList = new List<int>();
+                        foreach (var itemID in blackList)
+                        {
+                            bList.Add(int.Parse(itemID));
+                        }
 
-                    if (bList.Contains(item.id))
-                    {
-                        if (!caller.IsAdmin)
+                        if (bList.Contains(item.id))
                         {
                             UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("blacklisted", UnturnedItems.GetItemAssetById(item.id)), Color.red);
                         }
                     }
                 }
-            }
-            
-            if (inventoryCount > itemLimit)
-            {
-                if (!caller.IsAdmin)
+
+                if (inventoryCount > itemLimit)
                 {
-                    if (itemLimit == 0)
-                    {
-                        UnturnedChat.Say(caller, "You do not have permissions to execute this command.", Color.red);
-                        return;
-                    }
-                    else
-                    {
-                        UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
-                        return;
-                    }
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
+                    return;
                 }
             }
 
+            if (Plugin.CustomKitsPlugin.Instance.Configuration.Instance.DefaultKitName == "preset_name")
+            {
+                kitName = presetName;
+            }
+
+            if (command.Length == 1)
+            {
+                kitName = command[0];
+            }
+            
+            if (kitName == "*")
+            {
+                UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("unsupported_character", "*"), Color.red);
+                return;
+            }
+            
             if (inventoryCount < 1 || itemList == null)
             {
                 UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("empty_inventory"), Color.red);

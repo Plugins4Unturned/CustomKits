@@ -25,17 +25,15 @@ namespace Teyhota.CustomKits.Plugin
     {
         public static string PluginName = "CustomKits";
         public static string PluginVersion = "1.7.0";
-        public static string BuildVersion = "21";
+        public static string BuildVersion = "29";
         public static string RocketVersion = "4.9.3.0";
         public static string UnturnedVersion = "3.23.5.0";
-        
         public static string ThisDirectory = System.IO.Directory.GetCurrentDirectory() + @"\Plugins\CustomKits\";
-        
+
+        public static CustomKitsPlugin Instance;
         public static bool HasPerms;
         public const string PERMISSION = "ck.preset.";
-        
-        public static CustomKitsPlugin Instance;
-        
+
         public static void Write(string message)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -50,7 +48,7 @@ namespace Teyhota.CustomKits.Plugin
         }
         public void CheckForUpdates(string xmlUrl)
         {
-            string updateDir = System.IO.Directory.GetCurrentDirectory() + @"\Updates\";
+            string updateDir = System.IO.Directory.GetCurrentDirectory() + @"\Updates\CustomKits\";
             string downloadURL = "";
             string newVersion = "";
             string updateInfo = "";
@@ -119,7 +117,7 @@ namespace Teyhota.CustomKits.Plugin
             {
                 new WebClient().DownloadFile(downloadURL, updateDir + "Update-" + newVersion + ".zip");
                 
-                Write(string.Format(updateInfo, newVersion) + "\n", ConsoleColor.Green);
+                Write(string.Format(updateInfo) + "\n", ConsoleColor.Green);
             }
             catch
             {
@@ -169,11 +167,33 @@ namespace Teyhota.CustomKits.Plugin
             }
         }
 
+        #region Yes command
+        [RocketCommand("yes", "", "", AllowedCaller.Player), RocketCommandPermission("ck.delete")]
+        public void ExecuteYes(IRocketPlayer caller, string[] command)
+        {
+            UnturnedPlayer callr = (UnturnedPlayer)caller;
+
+            if (Commands.Command_Delete.Yes.Contains(callr.CSteamID))
+            {
+                // Delete all kits
+                KitManager.DeleteKit(callr, "*", KitManager.Kits);
+                UnturnedChat.Say(caller, Translate("all_kits_deleted"), Color.green);
+
+                Commands.Command_Delete.Yes.Remove(callr.CSteamID);
+            }
+            else
+            {
+                UnturnedChat.Say(caller, "Command not found.", Color.red);
+            }
+        }
+        #endregion
+
         protected override void Load()
         {
             Instance = this;
             SlotManager.Slots = new Dictionary<ulong, List<SlotManager.Slot>>();
             KitManager.AutoSaveKits = new Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>>();
+            VehicleManager.CurrentVehicles = new Dictionary<CSteamID, List<InteractableVehicle>>();
 
             UnturnedPlayerEvents.OnPlayerRevive += OnPlayerRevive;
             UnturnedPlayerEvents.OnPlayerDeath += OnPlayerDeath;
@@ -181,10 +201,12 @@ namespace Teyhota.CustomKits.Plugin
             U.Events.OnPlayerDisconnected += OnPlayerDisconnected;
             U.Events.OnPlayerConnected += OnPlayerConnected;
             R.Plugins.OnPluginsLoaded += OnPluginsLoad;
+            R.Commands.OnExecuteCommand += OnCommandExecuted;
             Events.OnKitDeleted += OnKitDeleted;
             Events.OnKitSaved += OnKitSaved;
-
-            Write("\n" + PluginName + " " + PluginVersion + " BETA-" + BuildVersion);
+            
+            Write("\n" + PluginName + " Inventory Manager");
+            Write("Version " + PluginVersion + " BETA-" + BuildVersion);
             Write("Made by Teyhota");
             Write("for Rocket " + RocketVersion + "\n");
 
@@ -256,28 +278,7 @@ namespace Teyhota.CustomKits.Plugin
                 PlayerConnected(player);
             }
         }
-
-        #region Yes command
-        [RocketCommand("yes", "", "", AllowedCaller.Player), RocketCommandPermission("ck.delete")]
-        public void ExecuteYes(IRocketPlayer caller, string[] command)
-        {
-            UnturnedPlayer callr = (UnturnedPlayer)caller;
-
-            if (Commands.Command_Delete.Yes.Contains(callr.CSteamID))
-            {
-                // Delete all kits
-                KitManager.DeleteKit(callr, "*", KitManager.Kits);
-                UnturnedChat.Say(caller, Translate("all_kits_deleted"), Color.green);
-
-                Commands.Command_Delete.Yes.Remove(callr.CSteamID);
-            }
-            else
-            {
-                UnturnedChat.Say(caller, "Command not found.", Color.red);
-            }
-        }
-        #endregion
-
+        
         private void OnPluginsLoad()
         {
             if (Configuration.Instance.KeepKitsOnRestart == true)
@@ -285,6 +286,29 @@ namespace Teyhota.CustomKits.Plugin
                 if (U.Settings.Instance.AutomaticSave.Enabled == true)
                 {
                     StartCoroutine(KitManager.AutoStoreKits());
+                }
+            }
+        }
+
+        private void OnCommandExecuted(IRocketPlayer player, IRocketCommand command, ref bool cancel)
+        {
+            if (!player.IsAdmin || !player.HasPermission("ck.admin") || !(player is ConsolePlayer))
+            {
+                if (Configuration.Instance.VehicleCommand.Length > 0)
+                {
+                    if (command.Name.Trim().ToLower() == Configuration.Instance.VehicleCommand)
+                    {
+                        StartCoroutine(VehicleManager.LimitVehicles((UnturnedPlayer)player));
+                        cancel = false;
+                    }
+                }
+                else
+                {
+                    if (command.Name.Trim().ToLower() == "v" || command.Name.Trim().ToLower() == "vehicle")
+                    {
+                        StartCoroutine(VehicleManager.LimitVehicles((UnturnedPlayer)player));
+                        cancel = false;
+                    }
                 }
             }
         }
@@ -333,7 +357,7 @@ namespace Teyhota.CustomKits.Plugin
 
             if (Commands.Command_AutoSave.AutoSave.ContainsKey(player.CSteamID))
             {
-                InventoryManager.AutoSave(player);
+                KitManager.AutoSave(player);
             }
 
             if (Commands.Command_AutoLoad.AutoLoad.ContainsKey(player.CSteamID))
@@ -415,6 +439,7 @@ namespace Teyhota.CustomKits.Plugin
             U.Events.OnPlayerDisconnected -= OnPlayerDisconnected;
             U.Events.OnPlayerConnected -= OnPlayerConnected;
             R.Plugins.OnPluginsLoaded -= OnPluginsLoad;
+            R.Commands.OnExecuteCommand -= OnCommandExecuted;
             Events.OnKitDeleted -= OnKitDeleted;
             Events.OnKitSaved -= OnKitSaved;
 

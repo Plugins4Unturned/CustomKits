@@ -9,8 +9,10 @@ using Rocket.Unturned;
 using Rocket.API;
 using SDG.Unturned;
 using UnityEngine;
+using Steamworks;
 using Newtonsoft.Json;
 using Logger = Rocket.Core.Logging.Logger;
+
 
 namespace Teyhota.CustomKits
 {
@@ -114,6 +116,23 @@ namespace Teyhota.CustomKits
         }
         #endregion
 
+        public static List<Item> ListItems(UnturnedPlayer player)
+        {
+            List<Item> itemList = new List<Item>();
+
+            for (byte page = 0; page < PlayerInventory.PAGES - 1; page++)
+            {
+                for (byte index = 0; index < player.Inventory.getItemCount(page); index++)
+                {
+                    ItemJar iJar = player.Inventory.getItem(page, index);
+
+                    itemList.Add(new Item(iJar.item.id, iJar.item.metadata, page, iJar.x, iJar.y, iJar.rot));
+                }
+            }
+
+            return itemList;
+        }
+
         public static void AddItem(UnturnedPlayer player, Item item)
         {
             SDG.Unturned.Item uItem = new SDG.Unturned.Item(item.id, true)
@@ -168,28 +187,8 @@ namespace Teyhota.CustomKits
                 player.Player.clothing.askWearBackpack(backpack.id, backpack.quality, backpack.state, true);
             }
         }
-
-        public static int ItemCount(UnturnedPlayer player)
-        {
-            List<Item> itemList = new List<Item>();
-            int itemCount = 0;
-
-            for (byte page = 0; page < PlayerInventory.PAGES - 1; page++)
-            {
-                for (byte index = 0; index < player.Inventory.getItemCount(page); index++)
-                {
-                    ItemJar iJar = player.Inventory.getItem(page, index);
-
-                    itemList.Add(new Item(iJar.item.id, iJar.item.metadata, page, iJar.x, iJar.y, iJar.rot));
-
-                    itemCount = itemList.Count;
-                }
-            }
-
-            return itemCount;
-        }
-
-        public static void Clear(UnturnedPlayer player)
+        
+        public static void Clear(UnturnedPlayer player, bool clothes)
         {
             // inventory...
             try
@@ -226,51 +225,53 @@ namespace Teyhota.CustomKits
             }
 
             // clothes...
-            try
+            if (clothes)
             {
-                player.Player.clothing.askWearBackpack(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                try
                 {
-                    player.Player.inventory.removeItem(2, 0);
+                    player.Player.clothing.askWearBackpack(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearGlasses(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearHat(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearMask(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearPants(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearShirt(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
+                    player.Player.clothing.askWearVest(0, 0, new byte[0], true);
+                    for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                    {
+                        player.Player.inventory.removeItem(2, 0);
+                    }
                 }
-                player.Player.clothing.askWearGlasses(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
+                catch (Exception e)
                 {
-                    player.Player.inventory.removeItem(2, 0);
-                }
-                player.Player.clothing.askWearHat(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
-                {
-                    player.Player.inventory.removeItem(2, 0);
-                }
-                player.Player.clothing.askWearMask(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
-                {
-                    player.Player.inventory.removeItem(2, 0);
-                }
-                player.Player.clothing.askWearPants(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
-                {
-                    player.Player.inventory.removeItem(2, 0);
-                }
-                player.Player.clothing.askWearShirt(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
-                {
-                    player.Player.inventory.removeItem(2, 0);
-                }
-                player.Player.clothing.askWearVest(0, 0, new byte[0], true);
-                for (byte p2 = 0; p2 < player.Player.inventory.getItemCount(2); p2++)
-                {
-                    player.Player.inventory.removeItem(2, 0);
+                    Logger.LogError("There was an error clearing " + player.CharacterName + "'s inventory.  Here is the error.");
+                    Logger.LogException(e);
                 }
             }
-            catch (Exception e)
-            {
-                Logger.LogError("There was an error clearing " + player.CharacterName + "'s inventory.  Here is the error.");
-                Logger.LogException(e);
-            }
-
-            // Events
+            
             Events.InvokeClearInventory(player);
         }
 
@@ -285,22 +286,10 @@ namespace Teyhota.CustomKits
             Pants pants = new Pants(clothing.pants, clothing.pantsQuality, clothing.pantsState);
             Clothing clothesList = new Clothing(hat, mask, shirt, vest, backpack, pants);
 
-            List<Item> itemList = new List<Item>();
-            int inventoryCount = 0;
+            List<Item> itemList = ListItems(fromPlayer);
+            int inventoryCount = itemList.Count;
 
-            for (byte page = 0; page < PlayerInventory.PAGES - 1; page++)
-            {
-                for (byte index = 0; index < fromPlayer.Inventory.getItemCount(page); index++)
-                {
-                    ItemJar iJar = fromPlayer.Inventory.getItem(page, index);
-
-                    itemList.Add(new Item(iJar.item.id, iJar.item.metadata, page, iJar.x, iJar.y, iJar.rot));
-
-                    inventoryCount = itemList.Count;
-                }
-            }
-
-            Clear(toPlayer);
+            Clear(toPlayer, clothes);
 
             if (clothes == true)
             {
@@ -329,33 +318,29 @@ namespace Teyhota.CustomKits
                     return;
                 }
 
-                Copy(murderer, player, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothing);
+                Copy(murderer, player, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothingInKits);
 
                 UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("copied", murderer.CharacterName), Color.green);
             }
         }
+    }
+
+    public class KitManager
+    {
+        public static Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>> Kits;
+        public static Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>> AutoSaveKits;
 
         internal static void AutoSave(UnturnedPlayer player)
         {
             string kitName = Commands.Command_AutoSave.AutoSave[player.CSteamID];
-            Inventory inventory = KitManager.AutoSaveKits[player.CSteamID.m_SteamID][kitName];
+            InventoryManager.Inventory inventory = AutoSaveKits[player.CSteamID.m_SteamID][kitName];
             int inventoryCount = inventory.items.Count;
-            int itemLimit = int.MaxValue;
 
             if (!player.IsAdmin)
             {
-                if (KitManager.KitCount(player, KitManager.Kits) >= SlotManager.SlotCount(player))
-                {
-                    UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
-                    return;
-                }
-
-                var v = KitManager.KitCount(player, KitManager.Kits);
-                var slot = SlotManager.Slots[player.CSteamID.m_SteamID][v];
-
-                itemLimit = slot.itemLimit;
-
                 string[] blackList = new string[] { };
+                int itemLimit = int.MaxValue;
+
                 foreach (Plugin.CustomKitsConfig.Preset Preset in Plugin.CustomKitsPlugin.Instance.Configuration.Instance.Presets)
                 {
                     if (player.HasPermission(Plugin.CustomKitsPlugin.PERMISSION + Preset.Name))
@@ -366,11 +351,27 @@ namespace Teyhota.CustomKits
                             break;
                         }
                     }
+                    else
+                    {
+                        UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("set_permissions"), Color.red);
+                        return;
+                    }
                 }
+
+                if (KitCount(player, Kits) >= SlotManager.SlotCount(player))
+                {
+                    UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
+                    return;
+                }
+
+                var v = KitCount(player, Kits);
+                var slot = SlotManager.Slots[player.CSteamID.m_SteamID][v];
+
+                itemLimit = slot.itemLimit;
 
                 if (blackList.Length > 0)
                 {
-                    foreach (Item item in inventory.items)
+                    foreach (InventoryManager.Item item in inventory.items)
                     {
                         List<int> bList = new List<int>();
                         foreach (var itemID in blackList)
@@ -384,22 +385,11 @@ namespace Teyhota.CustomKits
                         }
                     }
                 }
-            }
-            
-            if (inventoryCount > itemLimit)
-            {
-                if (!player.IsAdmin)
+
+                if (inventoryCount > itemLimit)
                 {
-                    if (itemLimit == 0)
-                    {
-                        UnturnedChat.Say(player, "You do not have permissions to execute this command.", Color.red);
-                        return;
-                    }
-                    else
-                    {
-                        UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
-                        return;
-                    }
+                    UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("item_limit", itemLimit), Color.red);
+                    return;
                 }
             }
 
@@ -414,19 +404,13 @@ namespace Teyhota.CustomKits
                 KitManager.DeleteKit(player, kitName, KitManager.Kits);
             }
 
-            KitManager.Kits[player.CSteamID.m_SteamID].Add(kitName, inventory);
+            KitManager.SaveKit(player, player, kitName, KitManager.Kits);
             UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("kit_saved", kitName), Color.green);
 
             // Auto off
             Commands.Command_AutoSave.AutoSave.Remove(player.CSteamID);
             UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("autosave_off"), Color.green);
         }
-    }
-
-    public class KitManager
-    {
-        public static Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>> Kits;
-        public static Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>> AutoSaveKits;
 
         public static void SaveKit(UnturnedPlayer fromPlayer, UnturnedPlayer toPlayer, string kitName, Dictionary<ulong, Dictionary<string, InventoryManager.Inventory>> database)
         {
@@ -606,7 +590,7 @@ namespace Teyhota.CustomKits
         {
             yield return new WaitForSeconds(delay);
 
-            LoadKit(player, player, kitName, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothing, Kits);
+            LoadKit(player, player, kitName, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothingInKits, Kits);
             UnturnedChat.Say(player, Plugin.CustomKitsPlugin.Instance.Translate("kit_loaded", kitName), Color.green);
         }
 
@@ -687,6 +671,46 @@ namespace Teyhota.CustomKits
             if (!Slots.ContainsKey(player.CSteamID.m_SteamID)) return;
 
             Slots.Remove(player.CSteamID.m_SteamID);
+        }
+    }
+
+    public class VehicleManager
+    {
+        public static Dictionary<CSteamID, List<InteractableVehicle>> CurrentVehicles;
+
+        public static IEnumerator LimitVehicles(UnturnedPlayer player)
+        {
+            yield return new WaitForSeconds(2.5f);
+
+            if (CurrentVehicles.ContainsKey(player.CSteamID))
+            {
+                if (CurrentVehicles[player.CSteamID].Count > 0)
+                {
+                    foreach (var car in CurrentVehicles[player.CSteamID])
+                    {
+                        if (!car.isEmpty)
+                        {
+                            car.forceRemoveAllPlayers();
+                        }
+
+                        SDG.Unturned.VehicleManager.instance.channel.send("tellVehicleDestroy", ESteamCall.ALL, ESteamPacket.UPDATE_RELIABLE_BUFFER, new object[] { car.instanceID });
+                    }
+
+                    CurrentVehicles[player.CSteamID].Clear();
+                }
+            }
+            else
+            {
+                CurrentVehicles.Add(player.CSteamID, new List<InteractableVehicle>());
+            }
+            
+            foreach (var car in SDG.Unturned.VehicleManager.vehicles)
+            {
+                if ((car.transform.position - player.Position).magnitude < 24f)
+                {
+                    CurrentVehicles[player.CSteamID].Add(car);
+                }
+            }
         }
     }
 

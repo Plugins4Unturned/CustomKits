@@ -9,11 +9,12 @@ namespace Teyhota.CustomKits.Plugin
         public static CustomKitsConfig Instance;
         
         public string DisableAutoUpdate;
+        public string VehicleCommand;
         public string DefaultKitName;
         public bool KeepKitsOnRestart;
         public bool KeepKitsOnDeath;
         public bool KeepKitsOnDisconnect;
-        public bool IncludeClothing;
+        public bool IncludeClothingInKits;
         public bool DisableItemDrops;
 
         [XmlArray("Presets"), XmlArrayItem(ElementName = "Preset")]
@@ -49,7 +50,7 @@ namespace Teyhota.CustomKits.Plugin
             KeepKitsOnRestart = true;
             KeepKitsOnDeath = true;
             KeepKitsOnDisconnect = true;
-            IncludeClothing = true;
+            IncludeClothingInKits = true;
             DisableItemDrops = false;
 
             Presets = new List<Preset>()

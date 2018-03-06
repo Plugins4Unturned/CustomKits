@@ -21,7 +21,6 @@ namespace Teyhota.CustomKits.Commands
         public List<string> Permissions => new List<string> { "ck.copyinventory" };
 
         public const string OTHER_PERM = "ck.copyinventory.other";
-        public const string BYPASS_PERM = "ck.copyinventory.bypass";
 
 
         public void Execute(IRocketPlayer caller, string[] command)
@@ -39,14 +38,14 @@ namespace Teyhota.CustomKits.Commands
                 {
                     UnturnedPlayer fromPlayer = UnturnedPlayer.FromName(command[0]);
                     
-                    if (fromPlayer.HasPermission(BYPASS_PERM))
+                    if (fromPlayer.IsAdmin || fromPlayer.HasPermission("ck.admin"))
                     {
                         UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("copy_bypass", fromPlayer.CharacterName), Color.red);
                         return;
                     }
                     else
                     {
-                        InventoryManager.Copy(fromPlayer, callr, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothing);
+                        InventoryManager.Copy(fromPlayer, callr, Plugin.CustomKitsPlugin.Instance.Configuration.Instance.IncludeClothingInKits);
 
                         UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("copied", fromPlayer.CharacterName), Color.green);
                     }

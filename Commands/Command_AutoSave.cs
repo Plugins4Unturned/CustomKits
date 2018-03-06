@@ -64,10 +64,13 @@ namespace Teyhota.CustomKits.Commands
                 return;
             }
 
-            if (KitManager.KitCount(callr, KitManager.Kits) >= slotCount && !caller.IsAdmin)
+            if (KitManager.KitCount(callr, KitManager.Kits) >= slotCount)
             {
-                UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
-                return;
+                if (!caller.IsAdmin || !caller.HasPermission("ck.admin"))
+                {
+                    UnturnedChat.Say(caller, Plugin.CustomKitsPlugin.Instance.Translate("no_kits_left"), Color.red);
+                    return;
+                }
             }
 
             if (!AutoSave.ContainsKey(callr.CSteamID))
